@@ -7,8 +7,10 @@ import Image from "next/image";
 import { useOrganization } from "@clerk/nextjs";
 import useConvexMutation from "@/hooks/use-api-mutation";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export const EmptyBoards = () => {
+  const router = useRouter();
   const { organization } = useOrganization();
   const { mutate, pending } = useConvexMutation(api.board.create);
 
@@ -18,10 +20,11 @@ export const EmptyBoards = () => {
       orgId: organization.id,
       title: "Untitled",
     })
-    .then((id)=>{
-      toast.success("Board Created");
-    })
-    .catch(()=>toast.error("Failed to create board"))
+      .then((id) => {
+        toast.success("Board Created");
+        router.push(`/board/${id}`);
+      })
+      .catch(() => toast.error("Failed to create board"));
   };
 
   return (
