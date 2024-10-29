@@ -9,9 +9,13 @@ import { Footer } from "./footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Actions } from "../actions";
 import { MoreHorizontal } from "lucide-react";
+import useConvexMutation from "@/hooks/use-api-mutation";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
+import { Id } from '@/convex/_generated/dataModel';
 
 interface BoardCardProps {
-  id: string;
+  id: Id<"boards">;
   title: string;
   authorName: string;
   authorId: string;
@@ -36,6 +40,24 @@ export const BoardCard = ({
   const createdAtLabel = formatDistanceToNow(createdAt, {
     addSuffix: true,
   });
+
+  const { mutate: onFavorite, pending: pendingFavorite } = useConvexMutation(
+    api.board.favorite
+  );
+  const { mutate: onUnfavorite, pending: pendingUnfavorite } = useConvexMutation(
+    api.board.unfavorite
+  );
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      onUnfavorite({id})
+      .catch(()=>toast.error("Failed to UnFavorite"));
+    } else {
+      onFavorite({ id, orgId })
+      .catch(()=>toast.error("Failed to Favorite"))
+    }
+  };
+
   return (
     <Link href={`/board/${id}`}>
       <div className="group aspect-[100/127] border rounded-lg flex flex-col justify-between overflow-hidden">
@@ -44,9 +66,7 @@ export const BoardCard = ({
           <Overlay />
           <Actions id={id} title={title} side="right">
             <button className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-2 outline-none">
-              <MoreHorizontal
-              className="text-white opacity-75 hover:opacity-100 transition-opacity"
-              />
+              <MoreHorizontal className="text-white opacity-75 hover:opacity-100 transition-opacity" />
             </button>
           </Actions>
         </div>
@@ -55,8 +75,8 @@ export const BoardCard = ({
           title={title}
           authorLabel={authorLabel}
           createdAtLabel={createdAtLabel}
-          onClick={() => {}}
-          disabled={false}
+          onClick={toggleFavorite}
+          disabled={pendingFavorite || pendingUnfavorite}
         />
       </div>
     </Link>
