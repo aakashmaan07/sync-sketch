@@ -7,12 +7,12 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@clerk/nextjs";
 import { Footer } from "./footer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Actions } from "../actions";
 import { MoreHorizontal } from "lucide-react";
 import useConvexMutation from "@/hooks/use-api-mutation";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
-import { Id } from '@/convex/_generated/dataModel';
+import { Id } from "@/convex/_generated/dataModel";
+import { Actions } from "@/components/actions";
 
 interface BoardCardProps {
   id: Id<"boards">;
@@ -44,17 +44,14 @@ export const BoardCard = ({
   const { mutate: onFavorite, pending: pendingFavorite } = useConvexMutation(
     api.board.favorite
   );
-  const { mutate: onUnfavorite, pending: pendingUnfavorite } = useConvexMutation(
-    api.board.unfavorite
-  );
+  const { mutate: onUnfavorite, pending: pendingUnfavorite } =
+    useConvexMutation(api.board.unfavorite);
 
   const toggleFavorite = () => {
     if (isFavorite) {
-      onUnfavorite({id})
-      .catch(()=>toast.error("Failed to UnFavorite"));
+      onUnfavorite({ id }).catch(() => toast.error("Failed to UnFavorite"));
     } else {
-      onFavorite({ id, orgId })
-      .catch(()=>toast.error("Failed to Favorite"))
+      onFavorite({ id, orgId }).catch(() => toast.error("Failed to Favorite"));
     }
   };
 
