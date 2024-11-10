@@ -13,21 +13,19 @@ interface LayerPreviewProps {
 export const LayerPreview = memo(
   ({ id, onLayerPointerDown, selectionColor }: LayerPreviewProps) => {
     const layer = useStorage((root) => root.layers.get(id));
-    console.log()
+    // console.log({layer},"Layer_preview");
     if (!layer) {
       return null;
     }
     switch (layer.type) {
       case LayerType.Rectangle:
         return (
-          <div>
             <Rectangle
               id={id}
               layer={layer}
               onPointerDown={onLayerPointerDown}
               selectionColor={selectionColor}
             />
-          </div>
         );
       default:
         console.warn("Unknown layer type");
