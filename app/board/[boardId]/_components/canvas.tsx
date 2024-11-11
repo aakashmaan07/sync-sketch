@@ -25,6 +25,7 @@ import { connectionIdToColor, pointerEventToCanvasPoint } from "@/lib/utils";
 import { LiveObject } from "@liveblocks/client";
 import { LayerPreview } from "./layer-preview";
 import { useOthersMapped } from "@liveblocks/react/suspense";
+import { SelectionBox } from "./selection-box";
 
 const MAX_LAYERS = 100;
 
@@ -42,9 +43,9 @@ export const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0 });
   const [lastUsedColor, setLastUsedColor] = useState<Color>({
-    r: 0,
-    g: 0,
-    b: 0,
+    r: 255,
+    g: 255,
+    b: 255,
   });
 
   const history = useHistory();
@@ -130,11 +131,12 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     [camera, CanvasState, history, insertLayer]
   );
 
-  const selections = useOthersMapped((other) => other.presence.selection);
-
   const onLayerPointerDown = useMutation(
     ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
-      if (CanvasState.mode === CanvasMode.Pencil || CanvasMode.Inserting) {
+      if (
+        CanvasState.mode === CanvasMode.Pencil ||
+        CanvasState.mode === CanvasMode.Inserting
+      ) {
         return;
       }
       history.pause();
@@ -148,6 +150,8 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     },
     [setCanvasState, camera, history, CanvasState.mode]
   );
+
+  const selections = useOthersMapped((other) => other.presence.selection);
 
   const layerIdsToColorSelection = useMemo(() => {
     const layerIdsToColorSelection: Record<string, string> = {};
@@ -190,6 +194,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
               selectionColor={layerIdsToColorSelection[layerId]}
             />
           ))}
+          <SelectionBox onResizeHandlePointerDown={() => {}} />
           <CursorsPresence />
         </g>
       </svg>
