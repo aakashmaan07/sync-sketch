@@ -91,6 +91,43 @@ export const Canvas = ({ boardId }: CanvasProps) => {
     [lastUsedColor]
   );
 
+  const translateSelectedLayers=useMutation((
+    {storage,self},
+    point:Point,
+  )=>{
+    if(CanvasState.mode!=CanvasMode.Translating){
+      return;
+    }
+
+    const offset={
+      x:point.x-CanvasState.current.x,
+      y:point.y-CanvasState.current.y,
+    };
+
+    const liveLayers=storage.get("layers");
+
+    for(const id of self.presence.selection){
+      const layer=liveLayers.get(id);
+      if(layer){
+        layer.update({
+          x:layer.get("x")+offset.x,
+          y:layer.get("y")+offset.y,
+        });
+      }
+    }
+
+    setCanvasState({mode:CanvasMode.Translating,current:point});
+
+  },[CanvasState]);
+
+  const unselectLayers=useMutation((
+    {self,setMyPresence}
+  )=>{
+    if(self.presence.selection.length > 0){
+      setMyPresence({selection:[]},{addToHistory:true});
+    }
+  },[])
+
   const resizeSelectedLayer = useMutation(
     ({ storage, self }, point: Point) => {
       if (CanvasState.mode !== CanvasMode.Resizing) {
@@ -139,28 +176,45 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       e.preventDefault();
       const current = pointerEventToCanvasPoint(e, camera);
       // console.log({ current });
-      if (CanvasState.mode === CanvasMode.Resizing) {
+      if(CanvasState.mode === CanvasMode.Translating){
+        //console.log("Translating");
+        translateSelectedLayers(current);
+      }
+      else if (CanvasState.mode === CanvasMode.Resizing) {
         resizeSelectedLayer(current);
       }
       setMyPresence({ cursor: current });
     },
-    [camera, CanvasState, resizeSelectedLayer]
+    [camera, CanvasState, resizeSelectedLayer,translateSelectedLayers]
   );
 
   const onPointerLeave = useMutation(({ setMyPresence }) => {
     setMyPresence({ cursor: null });
   }, []);
 
+  const onPointerDown=useCallback((
+    e:React.PointerEvent
+  )=>{
+    const point=pointerEventToCanvasPoint(e,camera);
+
+    if(CanvasState.mode===CanvasMode.Inserting){
+      return;
+    }
+
+    setCanvasState({origin:point,mode:CanvasMode.Pressing});
+  },[camera,CanvasState.mode,setCanvasState]);
+
   const onPointerUp = useMutation(
     ({}, e) => {
       const point = pointerEventToCanvasPoint(e, camera);
 
-      // console.log({
-      //   point,
-      //   mode: CanvasState.mode,
-      // });
-
-      if (CanvasState.mode === CanvasMode.Inserting) {
+      if(CanvasState.mode === CanvasMode.None || CanvasState.mode === CanvasMode.Pressing){
+        unselectLayers(); 
+        setCanvasState({
+          mode:CanvasMode.None,
+        })
+      }
+      else if (CanvasState.mode === CanvasMode.Inserting) {
         insertLayer(CanvasState.layerType, point);
       } else {
         setCanvasState({
@@ -169,7 +223,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
       }
       history.resume();
     },
-    [camera, CanvasState, history, insertLayer]
+    [camera, CanvasState, history, insertLayer,unselectLayers]
   );
 
   const onLayerPointerDown = useMutation(
@@ -224,6 +278,7 @@ export const Canvas = ({ boardId }: CanvasProps) => {
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
+        onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
       >
         <g style={{ transform: `translate(${camera.x}px,${camera.y}px)` }}>
